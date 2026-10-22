@@ -1,127 +1,136 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Robo AI Task Bot</title>
-    <script src="https://telegram.org/js/telegram-web-app.js"></script>
-    <script src='//libtl.com/sdk.js' data-zone='12093978' data-sdk='show_12093978'></script>
-    <style>
-        body{font-family:sans-serif;background:#0f0f0f;color:white;text-align:center;padding:15px;margin:0}
-        .card{background:#1e1e1e;padding:20px;border-radius:15px;margin-top:15px}
-        .balance{font-size:32px;font-weight:bold;color:#00ff88;margin:10px 0}
-        button{background:#6c5ce7;color:white;border:none;padding:12px 20px;border-radius:10px;font-size:15px;width:100%;margin-top:10px;font-weight:bold;cursor:pointer}
-        .task-btn{background:#2d2d2d;display:flex;justify-content:space-between;align-items:center;text-align:left}
-        .nav{display:flex;gap:8px;margin-top:15px}
-        .nav button{background:#2d2d2d;width:25%}
-        .nav button.active{background:#6c5ce7}
-        input{width:90%;padding:12px;border-radius:8px;border:none;background:#2d2d2d;color:white;margin-top:8px}
-        .done{opacity:0.5;pointer-events:none}
-    </style>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Robo AI Task Bot</title>
+<script src="https://telegram.org/js/telegram-web-app.js"></script>
+<script src='//libtl.com/sdk.js' data-zone='12093978' data-sdk='show_12093978'></script>
+<style>
+body{margin:0;padding:0;background:#FFF8E7;font-family:sans-serif;padding-bottom:80px}
+.header{background:#FF9800;color:white;text-align:center;padding:30px 20px 40px 20px;border-radius:0 0 30px 30px}
+.header h1{margin:0;font-size:24px;font-weight:800}
+.card{background:white;margin:15px;border-radius:15px;padding:20px;box-shadow:0 2px 10px rgba(0,0,0,0.05)}
+.balance-label{color:#888;font-size:12px}
+.balance-val{font-size:32px;font-weight:900;color:black;margin:5px 0}
+.task-item{display:flex;justify-content:space-between;align-items:center;background:#F9F9F9;padding:15px;border-radius:10px;margin-top:10px}
+.bottom-nav{position:fixed;bottom:0;left:0;right:0;background:white;display:flex;justify-content:space-around;padding:10px 0 20px 0;border-top:1px solid #eee}
+.bottom-nav button{background:none;border:none;color:#999;font-size:12px;width:25%}
+.bottom-nav button.active{color:#FF9800;font-weight:bold}
+.btn-orange{background:#FF9800;color:white;border:none;padding:12px;width:100%;border-radius:10px;font-weight:bold;margin-top:10px;cursor:pointer}
+.btn-dark{background:#222;color:white;border:none;padding:12px;width:100%;border-radius:10px;font-weight:bold;margin-top:10px;cursor:pointer}
+input{width:95%;padding:12px;border:1px solid #eee;border-radius:10px;margin-top:8px}
+.done{opacity:0.5}
+</style>
 </head>
 <body>
-    <h2>Robo AI Task Bot</h2>
-    <div class="card"><div>Balance</div><div class="balance" id="balance">$0.000</div><div style="font-size:11px;opacity:0.6">ID: <span id="uid"></span></div></div>
-    <div class="nav">
-        <button onclick="showTab('tasks')" id="btn-tasks" class="active">Tasks</button>
-        <button onclick="showTab('add')" id="btn-add">Add</button>
-        <button onclick="showTab('ads')" id="btn-ads">Ads</button>
-        <button onclick="showTab('ref')" id="btn-ref">Refer</button>
-    </div>
-    <div id="tab-tasks"><div id="task-list"></div></div>
-    <div id="tab-add" style="display:none">
-        <div class="card">
-            <h3>Add New Task</h3>
-            <input id="add-title" placeholder="Task Title (ex: Join Channel)">
-            <input id="add-link" placeholder="Link https://t.me/...">
-            <input id="add-reward" placeholder="Reward 0.02" type="number" step="0.01">
-            <button onclick="requestAddTask()">Submit For Approval</button>
-            <p style="font-size:11px;opacity:0.6;margin-top:10px">Will be added after admin confirmation</p>
-        </div>
-        <div id="admin-panel" style="display:none" class="card">
-            <h3>Admin - Pending Tasks</h3>
-            <div id="pending-list"></div>
-        </div>
-    </div>
-    <div id="tab-ads" style="display:none">
-        <div class="card"><h3>Watch Ads</h3><button onclick="watchAd()" style="background:#00ff88;color:black">WATCH AD (+$0.005)</button></div>
-    </div>
-    <div id="tab-ref" style="display:none">
-        <div class="card">
-            <h3>Refer & Earn 10%</h3>
-            <p id="ref-link" style="font-size:12px;word-break:break-all;background:#111;padding:10px;border-radius:5px"></p>
-            <button onclick="copyRef()">Copy Referral Link</button>
-        </div>
-    </div>
+<div class="header"><h1>ROBO AI TASK BOT</h1></div>
+
+<div id="page-tasks">
+<div class="card" style="text-align:center">
+<div class="balance-label">YOUR BALANCE</div>
+<div class="balance-val" id="balance">$0.000</div>
+<div style="font-size:11px;color:#888">ID: <span id="uid"></span></div>
+</div>
+<div id="task-list"></div>
+<div class="card">
+<h3 style="margin:0 0 10px 0">Add New Task</h3>
+<input id="add-title" placeholder="Title ex: Join Channel">
+<input id="add-link" placeholder="Link https://t.me/...">
+<input id="add-reward" type="number" step="0.01" placeholder="Reward 0.02">
+<button class="btn-orange" onclick="requestAddTask()">Submit For Approval</button>
+</div>
+<div id="admin-panel" style="display:none" class="card">
+<h3>Admin - Pending Approval</h3>
+<div id="pending-list"></div>
+</div>
+</div>
+
+<div id="page-ads" style="display:none">
+<div class="card" style="text-align:center">
+<h3>Watch Ads & Earn</h3>
+<p>$0.005 per Ad - No Redirect</p>
+<button class="btn-orange" onclick="watchAd()">WATCH AD</button>
+</div>
+</div>
+
+<div id="page-referral" style="display:none">
+<div class="card">
+<h3>Referral $0.02</h3>
+<p id="ref-link" style="font-size:13px;color:#FF9800;word-break:break-all;background:#FFF8E7;padding:10px;border-radius:8px"></p>
+<button class="btn-dark" onclick="copyRef()">Copy Referral Link</button>
+</div>
+</div>
+
+<div id="page-profile" style="display:none">
+<div class="card" style="text-align:center">
+<h3>Profile</h3>
+<p>ID: <span id="uid2"></span></p>
+<p>Balance: <span id="balance2">$0.000</span></p>
+<button class="btn-orange" onclick="withdraw()">Withdraw Min $5.00</button>
+</div>
+</div>
+
+<div class="bottom-nav">
+<button onclick="showPage('tasks')" id="b-tasks" class="active">📋<br>Tasks</button>
+<button onclick="showPage('ads')" id="b-ads">🎬<br>Ads</button>
+<button onclick="showPage('referral')" id="b-referral">👥<br>Referral</button>
+<button onclick="showPage('profile')" id="b-profile">👤<br>Profile</button>
+</div>
+
 <script>
-const ADMIN_ID = "8886499198";
-const CONFIG = { BOT_USERNAME: "robo_aitask_bot", CHANNEL_1: "https://t.me/mini_earing_bot", CHANNEL_2: "https://t.me/earn_mini_pay" };
-const tg = window.Telegram.WebApp; tg.expand();
-const userId = String(tg.initDataUnsafe?.user?.id || ADMIN_ID);
-document.getElementById("uid").innerText = userId;
-let defaultTasks = [
-    {title:"Join @mini_earing_bot", reward:0.02, link: CONFIG.CHANNEL_1},
-    {title:"Join @earn_mini_pay", reward:0.02, link: CONFIG.CHANNEL_2}
+const ADMIN_ID="8886499198";
+const CONFIG={BOT_USERNAME:"robo_aitask_bot",CHANNEL_1:"https://t.me/mini_earing_bot",CHANNEL_2:"https://t.me/earn_mini_pay"};
+const tg=window.Telegram.WebApp; tg.expand();
+const userId=String(tg.initDataUnsafe?.user?.id||ADMIN_ID);
+document.getElementById("uid").innerText=userId;
+document.getElementById("uid2").innerText=userId;
+let defaultTasks=[
+{title:"Join @mini_earing_bot",reward:0.02,link:CONFIG.CHANNEL_1},
+{title:"Join @earn_mini_pay",reward:0.02,link:CONFIG.CHANNEL_2}
 ];
-let tasks = JSON.parse(localStorage.getItem("tasks_v2") || JSON.stringify(defaultTasks));
-let pending = JSON.parse(localStorage.getItem("pending_v2") || "[]");
-let doneIds = JSON.parse(localStorage.getItem("done_v2") || "[]");
-let balance = parseFloat(localStorage.getItem("bal")||"0");
-updateBalance(); renderTasks(); renderPending(); checkAdmin();
-function checkAdmin(){ if(userId === ADMIN_ID){ document.getElementById("admin-panel").style.display="block"; } }
-function updateBalance(){ document.getElementById("balance").innerText = "$" + balance.toFixed(3); localStorage.setItem("bal", balance.toFixed(3)); }
-function showTab(tab){
-    ['tasks','add','ads','ref'].forEach(t=>document.getElementById("tab-"+t).style.display = t===tab?'block':'none');
-    document.querySelectorAll('.nav button').forEach(b=>b.classList.remove('active'));
-    document.getElementById('btn-'+tab).classList.add('active');
-}
+let tasks=JSON.parse(localStorage.getItem("tasks_v2")||JSON.stringify(defaultTasks));
+let pending=JSON.parse(localStorage.getItem("pending_v2")||"[]");
+let doneIds=JSON.parse(localStorage.getItem("done_v2")||"[]");
+let balance=parseFloat(localStorage.getItem("bal")||"0");
+updateBalance();renderTasks();renderPending();checkAdmin();
+function checkAdmin(){if(userId===ADMIN_ID){document.getElementById("admin-panel").style.display="block";}}
+function updateBalance(){document.getElementById("balance").innerText="$"+balance.toFixed(3);document.getElementById("balance2").innerText="$"+balance.toFixed(3);localStorage.setItem("bal",balance.toFixed(3));}
+function showPage(p){['tasks','ads','referral','profile'].forEach(x=>document.getElementById("page-"+x).style.display=x===p?'block':'none');document.querySelectorAll(".bottom-nav button").forEach(b=>b.classList.remove("active"));document.getElementById("b-"+p).classList.add("active");}
 function renderTasks(){
-    let html="";
-    tasks.forEach((t,i)=>{
-        let isDone = doneIds.includes(i);
-        html+=`<div class="card ${isDone?'done':''}"><button class="task-btn" onclick="doTask(${i})"><span>${isDone?'DONE - ':''}${t.title}<br><small style="color:#00ff88">+$${t.reward}</small></span><span>${isDone?'DONE':'GO'}</span></button></div>`;
-    });
-    document.getElementById("task-list").innerHTML=html;
-    document.getElementById("ref-link").innerText = `https://t.me/${CONFIG.BOT_USERNAME}?start=${userId}`;
+let html="";tasks.forEach((t,i)=>{let isDone=doneIds.includes(i);html+=`<div class="card ${isDone?'done':''}"><div class="task-item"><div style="text-align:left"><b>${isDone?'DONE - ':''}${t.title}</b><br><small style="color:green">+$${t.reward}</small></div><button onclick="doTask(${i})" style="background:${isDone?'#ccc':'#FF9800'};color:white;border:none;padding:8px 15px;border-radius:8px;font-weight:bold">${isDone?'DONE':'GO'}</button></div></div>`;});
+document.getElementById("task-list").innerHTML=html;
+document.getElementById("ref-link").innerText=`https://t.me/${CONFIG.BOT_USERNAME}?start=${userId}`;
 }
 function renderPending(){
-    let html=""; if(pending.length===0) html="<p style='opacity:0.5'>No pending tasks</p>";
-    pending.forEach((t,i)=>{
-        html+=`<div style="background:#2d2d2d;padding:10px;border-radius:8px;margin-top:8px;text-align:left"><b>${t.title}</b><br><small>${t.link} - $${t.reward}</small><br><button onclick="confirmTask(${i})" style="background:#00ff88;color:black;margin-top:5px">Confirm & Add to Bot</button></div>`;
-    });
-    document.getElementById("pending-list").innerHTML=html;
+let html="";if(pending.length===0)html="<p style='color:#999'>No pending</p>";
+pending.forEach((t,i)=>{html+=`<div style="background:#FFF8E7;padding:10px;border-radius:10px;margin-top:8px;text-align:left"><b>${t.title}</b><br><small>${t.link} - $${t.reward}</small><br><button class="btn-dark" onclick="confirmTask(${i})">Confirm & Add</button></div>`;});
+document.getElementById("pending-list").innerHTML=html;
 }
+// NO POP - Only In-App Ad
 function doTask(i){
-    if(doneIds.includes(i)) return;
-    show_12093978().then(() => { window.open(tasks[i].link,"_blank"); completeTask(i); }).catch(()=>{ window.open(tasks[i].link,"_blank"); completeTask(i); });
+if(doneIds.includes(i))return;
+show_12093978().then(()=>{window.open(tasks[i].link,"_blank");completeTask(i);}).catch(()=>{window.open(tasks[i].link,"_blank");completeTask(i);});
 }
-function completeTask(i){
-    if(!doneIds.includes(i)){
-        doneIds.push(i); balance += parseFloat(tasks[i].reward); updateBalance();
-        localStorage.setItem("done_v2", JSON.stringify(doneIds)); renderTasks(); alert("Done! +$"+tasks[i].reward);
-    }
-}
+function completeTask(i){if(!doneIds.includes(i)){doneIds.push(i);balance+=parseFloat(tasks[i].reward);updateBalance();localStorage.setItem("done_v2",JSON.stringify(doneIds));renderTasks();}}
 function requestAddTask(){
-    let title=document.getElementById("add-title").value.trim();
-    let link=document.getElementById("add-link").value.trim();
-    let reward=document.getElementById("add-reward").value.trim() || "0.02";
-    if(!title || !link){ alert("Title & Link required"); return; }
-    pending.push({title, link, reward:parseFloat(reward)});
-    localStorage.setItem("pending_v2", JSON.stringify(pending));
-    alert("Submitted! Waiting for admin approval.");
-    document.getElementById("add-title").value=""; document.getElementById("add-link").value=""; document.getElementById("add-reward").value="";
-    renderPending();
+let title=document.getElementById("add-title").value.trim();
+let link=document.getElementById("add-link").value.trim();
+let reward=document.getElementById("add-reward").value.trim()||"0.02";
+if(!title||!link){alert("Title & Link required");return;}
+pending.push({title,link,reward:parseFloat(reward)});
+localStorage.setItem("pending_v2",JSON.stringify(pending));
+alert("Submitted! Waiting for admin approval.");
+document.getElementById("add-title").value="";document.getElementById("add-link").value="";document.getElementById("add-reward").value="";
+renderPending();
 }
-function confirmTask(i){
-    let t=pending[i]; tasks.push(t); localStorage.setItem("tasks_v2", JSON.stringify(tasks));
-    pending.splice(i,1); localStorage.setItem("pending_v2", JSON.stringify(pending));
-    renderTasks(); renderPending(); alert("Confirmed! Task Added to Bot!");
+function confirmTask(i){let t=pending[i];tasks.push(t);localStorage.setItem("tasks_v2",JSON.stringify(tasks));pending.splice(i,1);localStorage.setItem("pending_v2",JSON.stringify(pending));renderTasks();renderPending();alert("Confirmed!");}
+function copyRef(){navigator.clipboard.writeText(document.getElementById("ref-link").innerText).then(()=>alert("Copied!"));}
+// NO POP HERE TOO
+function watchAd(){
+show_12093978().then(()=>{balance+=0.005;updateBalance();alert("+$0.005 Added");}).catch(()=>{alert("No ad now, try again");});
 }
-function copyRef(){
-    let link=document.getElementById("ref-link").innerText;
-    navigator.clipboard.writeText(link).then(()=>alert("Referral Link Copied!"));
-}
-function watchAd(){ show_12093978('pop').then(() => { balance+=0.005; updateBalance(); alert('Ad Watched! +$0.005'); }); }
+function withdraw(){if(balance<1){alert("Min $5.00 needed");return;}alert("Withdrawal: $"+balance.toFixed(3));}
 </script>
 </body>
 </html>
