@@ -1,20 +1,37 @@
+
 <!DOCTYPE html>
 <html lang="en">
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Robo AI Task Bot</title>
+
 <script src="https://telegram.org/js/telegram-web-app.js"></script>
-<script src='//libtl.com/sdk.js' data-zone='12095096' data-sdk='show_12095096'></script>
+<script src="https://libtl.com/sdk.js" data-zone="12095096" data-sdk="show_12095096"></script>
+
+<script>
+if ('serviceWorker' in navigator) {
+  window.addEventListener('load', function () {
+    navigator.serviceWorker.register('/sw.js')
+      .then(function () {
+        console.log('Service worker registered');
+      })
+      .catch(function (error) {
+        console.error('Service worker registration failed:', error);
+      });
+  });
+}
+</script>
+
 <style>
 body{margin:0;padding:0;background:#FFF8E7;font-family:sans-serif;padding-bottom:80px}
-.header{background:#FF9800;color:white;text-align:center;padding:30px 20px 40px 20px;border-radius:0 0 30px 30px}
+.header{background:#FF9800;color:white;text-align:center;padding:30px 20px 40px;border-radius:0 0 30px 30px}
 .header h1{margin:0;font-size:24px;font-weight:800}
-.card{background:white;margin:15px;border-radius:15px;padding:20px;box-shadow:0 2px 10px rgba(0,0,0,0.05)}
+.card{background:white;margin:15px;border-radius:15px;padding:20px;box-shadow:0 2px 10px rgba(0,0,0,.05)}
 .balance-label{color:#888;font-size:12px}
 .balance-val{font-size:32px;font-weight:900;color:black;margin:5px 0}
 .task-item{display:flex;justify-content:space-between;align-items:center;background:#F9F9F9;padding:15px;border-radius:10px;margin-top:10px}
-.bottom-nav{position:fixed;bottom:0;left:0;right:0;background:white;display:flex;justify-content:space-around;padding:10px 0 20px 0;border-top:1px solid #eee}
+.bottom-nav{position:fixed;bottom:0;left:0;right:0;background:white;display:flex;justify-content:space-around;padding:10px 0 20px;border-top:1px solid #eee}
 .bottom-nav button{background:none;border:none;color:#999;font-size:12px;width:25%}
 .bottom-nav button.active{color:#FF9800;font-weight:bold}
 .btn-orange{background:#FF9800;color:white;border:none;padding:12px;width:100%;border-radius:10px;font-weight:bold;margin-top:10px;cursor:pointer}
@@ -23,198 +40,677 @@ body{margin:0;padding:0;background:#FFF8E7;font-family:sans-serif;padding-bottom
 .btn-red{background:red;color:white;border:none;padding:5px 10px;border-radius:6px;font-size:11px;cursor:pointer}
 .btn-green{background:green;color:white;border:none;padding:8px 12px;border-radius:6px;font-size:12px;cursor:pointer;font-weight:bold}
 .btn-small{background:#eee;border:none;padding:4px 8px;border-radius:5px;font-size:10px;cursor:pointer;margin-left:5px}
-input,select{width:95%;padding:12px;border:1px solid #eee;border-radius:10px;margin-top:8px}
-.done{opacity:0.5}
+input,select{box-sizing:border-box;width:100%;padding:12px;border:1px solid #eee;border-radius:10px;margin-top:8px}
+.done{opacity:.5}
 .admin-box{border:2px dashed #FF9800;background:#FFF3E0}
 .pay-box{border:2px solid #FF9800;background:#FFF8E7;padding:15px;border-radius:10px;margin-top:15px;text-align:left}
 </style>
 </head>
+
 <body>
-<div class="header"><h1>ROBO AI TASK BOT</h1></div>
+
+<div class="header">
+  <h1>ROBO AI TASK BOT</h1>
+</div>
 
 <div id="page-tasks">
-<div class="card" style="text-align:center">
-<div class="balance-label">YOUR BALANCE</div>
-<div class="balance-val" id="balance">$0.000</div>
-<div style="font-size:11px;color:#888">ID: <span id="uid"></span></div>
-</div>
-<div id="task-list"></div>
 
-<div class="card" id="user-add-box">
-<h3 style="margin:0 0 10px 0">Add New Task</h3>
-<input id="add-title" placeholder="Title ex: Join Channel">
-<input id="add-link" placeholder="Link https://t.me/...">
-<input id="add-reward" type="number" step="0.01" placeholder="Reward 0.02">
-<button class="btn-orange" onclick="showPaymentBox()">Continue to Payment</button>
-<div id="payment-box" style="display:none" class="pay-box">
-<h4 style="margin:0;color:#FF9800">💳 Pay $4.00 to Add Task</h4>
-<div style="background:white;padding:12px;border-radius:8px;font-size:12px;word-break:break-all;margin-top:10px">
-<b>USDT BEP20:</b><br>
-<span id="my-bep20-text">0x52824938de138886fdf6f7a80262e5c0a173d92c</span>
-<button class="btn-small" onclick="copyText('my-bep20-text')">Copy</button>
-</div>
-<input id="txn-id" placeholder="Enter Transaction Hash">
-<button class="btn-dark" onclick="requestAddTask()">I Paid - Submit</button>
-</div>
-</div>
+  <div class="card" style="text-align:center">
+    <div class="balance-label">YOUR BALANCE</div>
+    <div class="balance-val" id="balance">$0.000</div>
+    <div style="font-size:11px;color:#888">ID: <span id="uid"></span></div>
+  </div>
 
-<div id="admin-add-box" style="display:none" class="card admin-box">
-<h3 style="margin:0;color:#FF9800">🔒 ADMIN - Direct Add</h3>
-<input id="admin-title" placeholder="Title">
-<input id="admin-link" placeholder="Link https://t.me/...">
-<input id="admin-reward" type="number" step="0.01" placeholder="Reward 0.02">
-<button class="btn-orange" onclick="adminDirectAdd()">Add Directly</button>
-</div>
+  <div id="task-list"></div>
 
-<div id="admin-panel" style="display:none">
-<div class="card">
-<h3>Admin - Paid Task Requests</h3>
-<div id="pending-list"></div>
-</div>
-<div class="card" style="border:2px dashed green">
-<h3 style="color:green">💸 Withdraw Requests - Confirm to Share</h3>
-<div id="withdraw-pending-list"></div>
-</div>
-</div>
+  <div class="card" id="user-add-box">
+    <h3 style="margin:0 0 10px">Add New Task</h3>
+    <input id="add-title" placeholder="Title ex: Join Channel">
+    <input id="add-link" placeholder="Link https://t.me/...">
+    <input id="add-reward" type="number" step="0.01" placeholder="Reward 0.02">
+
+    <button class="btn-orange" onclick="showPaymentBox()">Continue to Payment</button>
+
+    <div id="payment-box" style="display:none" class="pay-box">
+      <h4 style="margin:0;color:#FF9800">💳 Pay $0.50 to Add Task</h4>
+
+      <div style="background:white;padding:12px;border-radius:8px;font-size:12px;word-break:break-all;margin-top:10px">
+        <b>USDT BEP20:</b><br>
+        <span id="my-bep20-text">0x52824938de138886fdf6f7a80262e5c0a173d92c</span>
+        <button class="btn-small" onclick="copyText('my-bep20-text')">Copy</button>
+      </div>
+
+      <input id="txn-id" placeholder="Enter Transaction Hash">
+      <button class="btn-dark" onclick="requestAddTask()">I Paid - Submit</button>
+    </div>
+  </div>
+
+  <div id="admin-add-box" style="display:none" class="card admin-box">
+    <h3 style="margin:0;color:#FF9800">🔒 ADMIN - Direct Add</h3>
+    <input id="admin-title" placeholder="Title">
+    <input id="admin-link" placeholder="Link https://t.me/...">
+    <input id="admin-reward" type="number" step="0.01" placeholder="Reward 0.02">
+    <button class="btn-orange" onclick="adminDirectAdd()">Add Directly</button>
+  </div>
+
+  <div id="admin-panel" style="display:none">
+    <div class="card">
+      <h3>Admin - Paid Task Requests</h3>
+      <div id="pending-list"></div>
+    </div>
+
+    <div class="card" style="border:2px dashed green">
+      <h3 style="color:green">💸 Withdraw Requests - Confirm to Share</h3>
+      <div id="withdraw-pending-list"></div>
+    </div>
+  </div>
 </div>
 
 <div id="page-ads" style="display:none">
-<div class="card" style="text-align:center">
-<h3>Watch Ads & Earn</h3>
-<p>$0.005 per Ad - <span id="ads-count">0/100</span> Today</p>
-<button class="btn-orange" onclick="watchAd()">WATCH AD</button>
-<p id="ad-status" style="font-size:12px;color:green;margin-top:10px"></p>
-</div>
+  <div class="card" style="text-align:center">
+    <h3>Watch Ads & Earn</h3>
+    <p>$0.005 per Ad - <span id="ads-count">0/100</span> Today</p>
+    <button class="btn-orange" onclick="watchAd()">WATCH AD</button>
+    <p id="ad-status" style="font-size:12px;color:green;margin-top:10px"></p>
+  </div>
 </div>
 
 <div id="page-referral" style="display:none">
-<div class="card">
-<h3>Referral $0.02</h3>
-<p id="ref-link" style="font-size:13px;color:#FF9800;word-break:break-all;background:#FFF8E7;padding:10px;border-radius:8px"></p>
-<button class="btn-dark" onclick="copyRef()">Copy Referral Link</button>
-</div>
+  <div class="card">
+    <h3>Referral $0.02</h3>
+    <p id="ref-link" style="font-size:13px;color:#FF9800;word-break:break-all;background:#FFF8E7;padding:10px;border-radius:8px"></p>
+    <button class="btn-dark" onclick="copyRef()">Copy Referral Link</button>
+  </div>
 </div>
 
 <div id="page-profile" style="display:none">
-<div class="card" style="text-align:center">
-<h3>Profile</h3>
-<p>ID: <span id="uid2"></span></p>
-<p>Balance: <span id="balance2">$0.000</span></p>
-<hr style="margin:15px 0;border:none;border-top:1px solid #eee">
-<div style="text-align:left">
-<label style="font-size:13px;font-weight:bold">Withdraw Method</label>
-<select id="withdraw-method" onchange="updateWithdrawPlaceholder()">
-<option value="USDT BEP20">USDT BEP20</option>
-<option value="BINANCE UID">BINANCE UID</option>
-</select>
-<input id="withdraw-address" placeholder="Enter USDT BEP20 Address">
-<p style="font-size:12px;color:#888;margin:5px 0">Your Balance: <b id="withdraw-balance">$0.000</b> | Min: $5.00</p>
-<p id="balance-warning" style="font-size:12px;color:red;display:none"></p>
-</div>
-<button class="btn-dark" onclick="saveAddress()">Save</button>
-<button class="btn-orange" id="withdraw-btn" onclick="withdraw()">Withdraw Min $5.00</button>
-<p id="saved-addr" style="font-size:12px;color:green;margin-top:10px;word-break:break-all"></p>
-</div>
+  <div class="card" style="text-align:center">
+    <h3>Profile</h3>
+    <p>ID: <span id="uid2"></span></p>
+    <p>Balance: <span id="balance2">$0.000</span></p>
+
+    <hr style="margin:15px 0;border:none;border-top:1px solid #eee">
+
+    <div style="text-align:left">
+      <label style="font-size:13px;font-weight:bold">Withdraw Method</label>
+
+      <select id="withdraw-method" onchange="updateWithdrawPlaceholder()">
+        <option value="USDT BEP20">USDT BEP20</option>
+        <option value="BINANCE UID">BINANCE UID</option>
+      </select>
+
+      <input id="withdraw-address" placeholder="Enter USDT BEP20 Address">
+
+      <p style="font-size:12px;color:#888;margin:5px 0">
+        Your Balance: <b id="withdraw-balance">$0.000</b> | Min: $5.00
+      </p>
+
+      <p id="balance-warning" style="font-size:12px;color:red;display:none"></p>
+    </div>
+
+    <button class="btn-dark" onclick="saveAddress()">Save</button>
+    <button class="btn-orange" id="withdraw-btn" onclick="withdraw()">Withdraw Min $5.00</button>
+
+    <p id="saved-addr" style="font-size:12px;color:green;margin-top:10px;word-break:break-all"></p>
+  </div>
 </div>
 
 <div class="bottom-nav">
-<button onclick="showPage('tasks')" id="b-tasks" class="active">📋<br>Tasks</button>
-<button onclick="showPage('ads')" id="b-ads">🎬<br>Ads</button>
-<button onclick="showPage('referral')" id="b-referral">👥<br>Referral</button>
-<button onclick="showPage('profile')" id="b-profile">👤<br>Profile</button>
+  <button onclick="showPage('tasks')" id="b-tasks" class="active">📋<br>Tasks</button>
+  <button onclick="showPage('ads')" id="b-ads">🎬<br>Ads</button>
+  <button onclick="showPage('referral')" id="b-referral">👥<br>Referral</button>
+  <button onclick="showPage('profile')" id="b-profile">👤<br>Profile</button>
 </div>
 
 <script>
-const ADMIN_ID="8886499198";
-const BOT_TOKEN="8570423763:AAHilKg65_KpbYnPkWcKuexnSx_z5rRZPOI";
-const MY_BEP20="0x52824938de138886fdf6f7a80262e5c0a173d92c";
-const PAYMENT_CHANNEL="@earn_mini_pay"; // <-- මෙතනට ඔයාගේ Payment Share Channel එක දාන්න ex: @robo_payments
-const CONFIG={BOT_USERNAME:"robo_aitask_bot",CHANNEL_1:"https://t.me/mini_earing_bot",CHANNEL_2:"https://t.me/earn_mini_pay"};
-const MAX_ADS_PER_DAY=100;
+/*
+  SECURITY:
+  Do not put a real Telegram Bot Token in public HTML.
+  Send bot API requests from a secure server instead.
+*/
+const ADMIN_ID = "888649919";
+const BOT_TOKEN = "YOUR_BOT_TOKEN_HERE";
+const MY_BEP20 = "0x52824938de138886fdf6f7a80262e5c0a173d92c";
+const PAYMENT_CHANNEL = "@YOUR_PAYMENT_CHANNEL";
 
-const tg=window.Telegram.WebApp; tg.expand();
-const userId=String(tg.initDataUnsafe?.user?.id||ADMIN_ID);
-document.getElementById("uid").innerText=userId;
-document.getElementById("uid2").innerText=userId;
+const CONFIG = {
+  BOT_USERNAME: "robo_aitask_bot",
+  CHANNEL_1: "https://t.me/mini_earing_bot",
+  CHANNEL_2: "https://t.me/earn_mini_pay"
+};
 
-let defaultTasks=[{title:"Join @mini_earing_bot",reward:0.02,link:CONFIG.CHANNEL_1},{title:"Join @earn_mini_pay",reward:0.02,link:CONFIG.CHANNEL_2}];
-let tasks=JSON.parse(localStorage.getItem("tasks_v2")||JSON.stringify(defaultTasks));
-let pending=JSON.parse(localStorage.getItem("pending_v2")||"[]");
-let doneIds=JSON.parse(localStorage.getItem("done_v2")||"[]");
-let balance=parseFloat(localStorage.getItem("bal")||"0");
-let withdrawRequests=JSON.parse(localStorage.getItem("withdraw_req")||"[]");
-let savedAddrLS=localStorage.getItem("withdraw_addr")||"";
-let savedMethodLS=localStorage.getItem("withdraw_method")||"USDT BEP20";
-let todayStr=new Date().toDateString();
-let lastAdDate=localStorage.getItem("ads_date")||"";
-let adsToday=parseInt(localStorage.getItem("ads_today")||"0");
-if(lastAdDate!==todayStr){adsToday=0;localStorage.setItem("ads_date",todayStr);localStorage.setItem("ads_today","0");}
+const MAX_ADS_PER_DAY = 100;
+const AD_REWARD = 0.005;
 
-updateBalance();renderTasks();renderPending();renderWithdrawRequests();checkAdmin();updateAdsCount();
-if(savedAddrLS){document.getElementById("withdraw-address").value=savedAddrLS; document.getElementById("withdraw-method").value=savedMethodLS; document.getElementById("saved-addr").innerText="Saved: "+savedMethodLS+" - "+savedAddrLS;}
+const tg = window.Telegram.WebApp;
+tg.expand();
 
-function checkAdmin(){if(userId===ADMIN_ID){document.getElementById("admin-panel").style.display="block";document.getElementById("admin-add-box").style.display="block";document.getElementById("user-add-box").style.display="none";}}
-function sendToAdmin(msg){if(BOT_TOKEN==="8570423763:AAHilKg65_KpbYnPkWcKuexnSx_z5rRZPOI"){console.log(msg);return;}fetch(`https://api.telegram.org/bot${BOT_TOKEN}/sendMessage`,{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({chat_id:ADMIN_ID,text:msg,parse_mode:"HTML"})}).catch(()=>{});}
-function sendToChannel(msg){if(BOT_TOKEN==="8570423763:AAHilKg65_KpbYnPkWcKuexnSx_z5rRZPOI"||PAYMENT_CHANNEL==="@earn_mini_pay"){console.log("Channel Msg: "+msg);return;}fetch(`https://api.telegram.org/bot${BOT_TOKEN}/sendMessage`,{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({chat_id:PAYMENT_CHANNEL,text:msg,parse_mode:"HTML"})}).then(()=>{console.log("Sent to channel")}).catch(e=>console.log(e));}
-function updateBalance(){
- document.getElementById("balance").innerText="$"+balance.toFixed(3);
- document.getElementById("balance2").innerText="$"+balance.toFixed(3);
- document.getElementById("withdraw-balance").innerText="$"+balance.toFixed(3);
- localStorage.setItem("bal",balance.toFixed(3));
- let btn=document.getElementById("withdraw-btn");
- let warn=document.getElementById("balance-warning");
- if(balance<5){btn.disabled=true; btn.innerText="Need $5.00 (Balance $"+balance.toFixed(3)+")"; warn.style.display="block"; warn.innerText="❌ Need $5.00! Your balance: $"+balance.toFixed(3);} 
- else {btn.disabled=false; btn.innerText="Withdraw $"+balance.toFixed(3); warn.style.display="none";}
+const userId = String(tg.initDataUnsafe?.user?.id || "");
+document.getElementById("uid").innerText = userId || "Not available";
+document.getElementById("uid2").innerText = userId || "Not available";
+
+let defaultTasks = [
+  {title:"Join @mini_earing_bot",reward:0.02,link:CONFIG.CHANNEL_1},
+  {title:"Join @earn_mini_pay",reward:0.02,link:CONFIG.CHANNEL_2}
+];
+
+let tasks = JSON.parse(localStorage.getItem("tasks_v2") || JSON.stringify(defaultTasks));
+let pending = JSON.parse(localStorage.getItem("pending_v2") || "[]");
+let doneIds = JSON.parse(localStorage.getItem("done_v2") || "[]");
+let balance = parseFloat(localStorage.getItem("bal") || "0");
+let withdrawRequests = JSON.parse(localStorage.getItem("withdraw_req") || "[]");
+let savedAddrLS = localStorage.getItem("withdraw_addr") || "";
+let savedMethodLS = localStorage.getItem("withdraw_method") || "USDT BEP20";
+
+let todayStr = new Date().toDateString();
+let lastAdDate = localStorage.getItem("ads_date") || "";
+let adsToday = parseInt(localStorage.getItem("ads_today") || "0", 10);
+
+if (lastAdDate !== todayStr) {
+  adsToday = 0;
+  localStorage.setItem("ads_date", todayStr);
+  localStorage.setItem("ads_today", "0");
 }
-function updateAdsCount(){document.getElementById("ads-count").innerText=adsToday+"/"+MAX_ADS_PER_DAY;}
-function updateWithdrawPlaceholder(){let m=document.getElementById("withdraw-method").value;document.getElementById("withdraw-address").placeholder=m==="USDT BEP20"?"Enter USDT BEP20 Address (0x...)":"Enter BINANCE UID";}
-function showPage(p){['tasks','ads','referral','profile'].forEach(x=>document.getElementById("page-"+x).style.display=x===p?'block':'none');document.querySelectorAll(".bottom-nav button").forEach(b=>b.classList.remove("active"));document.getElementById("b-"+p).classList.add("active"); if(p==='profile')updateBalance();}
-function renderTasks(){let html="";tasks.forEach((t,i)=>{let isDone=doneIds.includes(i);let delBtn=(userId===ADMIN_ID)?`<button class="btn-red" onclick="deleteTask(${i})">DELETE</button>`:"";html+=`<div class="card ${isDone?'done':''}"><div class="task-item"><div style="text-align:left"><b>${isDone?'DONE - ':''}${t.title}</b><br><small style="color:green">+$${t.reward}</small></div><div style="display:flex;gap:5px"><button onclick="doTask(${i})" style="background:${isDone?'#ccc':'#FF9800'};color:white;border:none;padding:8px 15px;border-radius:8px;font-weight:bold">${isDone?'DONE':'GO'}</button>${delBtn}</div></div></div>`;});document.getElementById("task-list").innerHTML=html;document.getElementById("ref-link").innerText=`https://t.me/${CONFIG.BOT_USERNAME}?start=${userId}`;}
-function renderPending(){let html="";if(pending.length===0)html="<p style='color:#999'>No pending tasks</p>";pending.forEach((t,i)=>{html+=`<div style="background:#FFF8E7;padding:10px;border-radius:10px;margin-top:8px;text-align:left"><b>${t.title}</b><br><small>${t.link} - $${t.reward} | From: ${t.from}</small><br><small style="color:green">TXN: ${t.txn}</small><br><button class="btn-dark" onclick="confirmTask(${i})">✅ Confirm Task</button> <button class="btn-red" onclick="rejectTask(${i})">Reject</button></div>`;});document.getElementById("pending-list").innerHTML=html;}
-function renderWithdrawRequests(){
- let html="";if(withdrawRequests.length===0)html="<p style='color:#999'>No withdraw requests</p>";
- withdrawRequests.forEach((w,i)=>{
-  html+=`<div style="background:#E8F5E9;padding:10px;border-radius:10px;margin-top:8px;text-align:left"><b>User: ${w.userId}</b><br><small>Balance: $${w.balance} | Amount: $${w.amount}</small><br><small>Method: ${w.method}</small><br><small style="word-break:break-all">To: ${w.address}</small><br><button class="btn-green" onclick="acceptWithdraw(${i})">✅ ACCEPT & SHARE TO CHANNEL</button> <button class="btn-red" onclick="rejectWithdraw(${i})">Reject</button></div>`;
- });
- document.getElementById("withdraw-pending-list").innerHTML=html;
+
+updateBalance();
+renderTasks();
+renderPending();
+renderWithdrawRequests();
+checkAdmin();
+updateAdsCount();
+
+if (savedAddrLS) {
+  document.getElementById("withdraw-address").value = savedAddrLS;
+  document.getElementById("withdraw-method").value = savedMethodLS;
+  document.getElementById("saved-addr").innerText =
+    "Saved: " + savedMethodLS + " - " + savedAddrLS;
 }
-function doTask(i){if(doneIds.includes(i))return;window.open(tasks[i].link,"_blank");completeTask(i);}
-function completeTask(i){if(!doneIds.includes(i)){doneIds.push(i);balance+=parseFloat(tasks[i].reward);updateBalance();localStorage.setItem("done_v2",JSON.stringify(doneIds));renderTasks();}}
-function showPaymentBox(){let title=document.getElementById("add-title").value.trim();let link=document.getElementById("add-link").value.trim();if(!title||!link){alert("First enter Title & Link");return;}document.getElementById("payment-box").style.display="block";}
-function copyText(id){navigator.clipboard.writeText(document.getElementById(id).innerText).then(()=>alert("Copied!"));}
-function requestAddTask(){let title=document.getElementById("add-title").value.trim();let link=document.getElementById("add-link").value.trim();let reward=document.getElementById("add-reward").value.trim()||"0.02";let txn=document.getElementById("txn-id").value.trim();if(!txn){alert("Enter Transaction Hash!");return;}let obj={title,link,reward:parseFloat(reward),from:userId,txn:txn};pending.push(obj);localStorage.setItem("pending_v2",JSON.stringify(pending));sendToAdmin(`🔔 <b>PAID TASK</b>\nTitle: ${title}\nLink: ${link}\nFrom: ${userId}\nTXN: ${txn}`);alert("Submitted!");document.getElementById("add-title").value="";document.getElementById("add-link").value="";document.getElementById("add-reward").value="";document.getElementById("txn-id").value="";document.getElementById("payment-box").style.display="none";renderPending();}
-function adminDirectAdd(){let title=document.getElementById("admin-title").value.trim();let link=document.getElementById("admin-link").value.trim();let reward=document.getElementById("admin-reward").value.trim()||"0.02";if(!title||!link){alert("Title & Link required");return;}let obj={title,link,reward:parseFloat(reward)};tasks.push(obj);localStorage.setItem("tasks_v2",JSON.stringify(tasks));alert("Added!");document.getElementById("admin-title").value="";document.getElementById("admin-link").value="";document.getElementById("admin-reward").value="";renderTasks();}
-function confirmTask(i){let t=pending[i];tasks.push(t);localStorage.setItem("tasks_v2",JSON.stringify(tasks));pending.splice(i,1);localStorage.setItem("pending_v2",JSON.stringify(pending));renderTasks();renderPending();alert("Task Confirmed!");}
-function rejectTask(i){pending.splice(i,1);localStorage.setItem("pending_v2",JSON.stringify(pending));renderPending();}
-function deleteTask(i){if(userId!==ADMIN_ID)return;if(!confirm("Delete?"))return;tasks.splice(i,1);localStorage.setItem("tasks_v2",JSON.stringify(tasks));doneIds=doneIds.filter(id=>id!==i).map(id=>id>i?id-1:id);localStorage.setItem("done_v2",JSON.stringify(doneIds));renderTasks();}
-function copyRef(){navigator.clipboard.writeText(document.getElementById("ref-link").innerText).then(()=>alert("Copied!"));}
-function watchAd(){if(adsToday>=MAX_ADS_PER_DAY){alert("Daily limit "+MAX_ADS_PER_DAY+" reached!");return;}document.getElementById("ad-status").innerText="Loading Ad...";show_12093978().then(()=>{balance+=0.005;updateBalance();adsToday++;localStorage.setItem("ads_today",adsToday);localStorage.setItem("ads_date",todayStr);updateAdsCount();document.getElementById("ad-status").innerText="✅ +$0.005 Added!";setTimeout(()=>{document.getElementById("ad-status").innerText="";},3000);}).catch(()=>{document.getElementById("ad-status").innerText="❌ No ad now";setTimeout(()=>{document.getElementById("ad-status").innerText="";},2000);});}
-function saveAddress(){let addr=document.getElementById("withdraw-address").value.trim();let method=document.getElementById("withdraw-method").value;if(!addr){alert("Enter Address / UID");return;}localStorage.setItem("withdraw_addr",addr);localStorage.setItem("withdraw_method",method);document.getElementById("saved-addr").innerText="Saved: "+method+" - "+addr;alert("Saved!");}
-function withdraw(){
- let addr=document.getElementById("withdraw-address").value.trim()||localStorage.getItem("withdraw_addr")||"";
- let method=document.getElementById("withdraw-method").value||localStorage.getItem("withdraw_method")||"USDT BEP20";
- if(!addr){alert("Save Address/UID first!");return;}
- if(balance<5){alert("❌ Minimum $5.00 needed! Your balance: $"+balance.toFixed(3));return;}
- let req={userId:userId,balance:balance.toFixed(3),amount:balance.toFixed(3),method:method,address:addr,time:new Date().toLocaleString()};
- withdrawRequests.push(req);localStorage.setItem("withdraw_req",JSON.stringify(withdrawRequests));
- sendToAdmin(`💸 <b>WITHDRAW REQUEST</b>\nUser: ${userId}\nBalance: $${balance.toFixed(3)}\nMethod: ${method}\nTo: ${addr}\n\nGo to Admin Panel to Accept!`);
- alert("✅ Request Sent! Admin will confirm soon.\nBalance: $"+balance.toFixed(3));
- renderWithdrawRequests();
- balance=0;updateBalance();
+
+function checkAdmin() {
+  if (userId && userId === ADMIN_ID) {
+    document.getElementById("admin-panel").style.display = "block";
+    document.getElementById("admin-add-box").style.display = "block";
+    document.getElementById("user-add-box").style.display = "none";
+  }
 }
-function acceptWithdraw(i){
- if(userId!==ADMIN_ID){alert("Admin only!");return;}
- let w=withdrawRequests[i];
- if(!confirm(`Accept withdraw $${w.amount} to ${w.address} and share to channel ${PAYMENT_CHANNEL}?`))return;
- // 1. Bot හරහා Payment Channel එකට Auto Forward
- let channelMsg=`✅ <b>PAYMENT PROOF - PAID!</b>\n\n💸 Amount: $${w.amount}\n👤 User ID: ${w.userId}\n💳 Method: ${w.method}\n📤 To: <code>${w.address}</code>\n⏰ Time: ${w.time}\n\n🔥 <b>Robo AI Task Bot - Legit Paying!</b>\nJoin: @${CONFIG.BOT_USERNAME}`;
- sendToChannel(channelMsg);
- // 2. Admin ට Confirm
- sendToAdmin(`✅ Withdraw Accepted & Shared to ${PAYMENT_CHANNEL}\nUser: ${w.userId}\nAmount: $${w.amount}`);
- alert(`✅ Accepted! Payment proof shared to ${PAYMENT_CHANNEL}`);
- withdrawRequests.splice(i,1);localStorage.setItem("withdraw_req",JSON.stringify(withdrawRequests));renderWithdrawRequests();
+
+function sendToAdmin(msg) {
+  if (BOT_TOKEN === "YOUR_BOT_TOKEN_HERE" || !userId) {
+    console.log("Admin message not sent:", msg);
+    return;
+  }
+
+  fetch(`https://api.telegram.org/bot${BOT_TOKEN}/sendMessage`, {
+    method: "POST",
+    headers: {"Content-Type":"application/json"},
+    body: JSON.stringify({
+      chat_id: ADMIN_ID,
+      text: msg,
+      parse_mode: "HTML"
+    })
+  }).catch(() => {});
 }
-function rejectWithdraw(i){if(userId!==ADMIN_ID)return;if(!confirm("Reject?"))return;withdrawRequests.splice(i,1);localStorage.setItem("withdraw_req",JSON.stringify(withdrawRequests));renderWithdrawRequests();}
+
+function sendToChannel(msg) {
+  if (
+    BOT_TOKEN === "YOUR_BOT_TOKEN_HERE" ||
+    PAYMENT_CHANNEL === "@YOUR_PAYMENT_CHANNEL"
+  ) {
+    console.log("Channel message not sent:", msg);
+    return;
+  }
+
+  fetch(`https://api.telegram.org/bot${BOT_TOKEN}/sendMessage`, {
+    method: "POST",
+    headers: {"Content-Type":"application/json"},
+    body: JSON.stringify({
+      chat_id: PAYMENT_CHANNEL,
+      text: msg,
+      parse_mode: "HTML"
+    })
+  }).catch(() => {});
+}
+
+function updateBalance() {
+  document.getElementById("balance").innerText = "$" + balance.toFixed(3);
+  document.getElementById("balance2").innerText = "$" + balance.toFixed(3);
+  document.getElementById("withdraw-balance").innerText = "$" + balance.toFixed(3);
+
+  localStorage.setItem("bal", balance.toFixed(3));
+
+  const btn = document.getElementById("withdraw-btn");
+  const warn = document.getElementById("balance-warning");
+
+  if (balance < 5) {
+    btn.disabled = true;
+    btn.innerText = "Need $5.00 (Balance $" + balance.toFixed(3) + ")";
+    warn.style.display = "block";
+    warn.innerText = "❌ Need $5.00! Your balance: $" + balance.toFixed(3);
+  } else {
+    btn.disabled = false;
+    btn.innerText = "Withdraw $" + balance.toFixed(3);
+    warn.style.display = "none";
+  }
+}
+
+function updateAdsCount() {
+  document.getElementById("ads-count").innerText = adsToday + "/" + MAX_ADS_PER_DAY;
+}
+
+function updateWithdrawPlaceholder() {
+  const method = document.getElementById("withdraw-method").value;
+  document.getElementById("withdraw-address").placeholder =
+    method === "USDT BEP20"
+      ? "Enter USDT BEP20 Address (0x...)"
+      : "Enter BINANCE UID";
+}
+
+function showPage(page) {
+  ["tasks","ads","referral","profile"].forEach(function (name) {
+    document.getElementById("page-" + name).style.display =
+      name === page ? "block" : "none";
+  });
+
+  document.querySelectorAll(".bottom-nav button").forEach(function (button) {
+    button.classList.remove("active");
+  });
+
+  document.getElementById("b-" + page).classList.add("active");
+
+  if (page === "profile") updateBalance();
+}
+
+function renderTasks() {
+  let html = "";
+
+  tasks.forEach(function (task, index) {
+    const isDone = doneIds.includes(index);
+    const deleteButton = userId === ADMIN_ID
+      ? `<button class="btn-red" onclick="deleteTask(${index})">DELETE</button>`
+      : "";
+
+    html += `
+      <div class="card ${isDone ? "done" : ""}">
+        <div class="task-item">
+          <div style="text-align:left">
+            <b>${escapeHTML(isDone ? "DONE - " + task.title : task.title)}</b>
+            <br><small style="color:green">+$${Number(task.reward).toFixed(3)}</small>
+          </div>
+          <div style="display:flex;gap:5px">
+            <button
+              onclick="doTask(${index})"
+              style="background:${isDone ? "#ccc" : "#FF9800"};color:white;border:none;padding:8px 15px;border-radius:8px;font-weight:bold"
+            >${isDone ? "DONE" : "GO"}</button>
+            ${deleteButton}
+          </div>
+        </div>
+      </div>`;
+  });
+
+  document.getElementById("task-list").innerHTML = html;
+  document.getElementById("ref-link").innerText =
+    `https://t.me/${CONFIG.BOT_USERNAME}?start=${userId}`;
+}
+
+function escapeHTML(value) {
+  return String(value).replace(/[&<>"']/g, function (character) {
+    return ({
+      "&":"&amp;",
+      "<":"&lt;",
+      ">":"&gt;",
+      '"':"&quot;",
+      "'":"&#39;"
+    })[character];
+  });
+}
+
+function renderPending() {
+  let html = "";
+
+  if (pending.length === 0) {
+    html = "<p style='color:#999'>No pending tasks</p>";
+  }
+
+  pending.forEach(function (task, index) {
+    html += `
+      <div style="background:#FFF8E7;padding:10px;border-radius:10px;margin-top:8px;text-align:left">
+        <b>${escapeHTML(task.title)}</b><br>
+        <small>${escapeHTML(task.link)} - $${Number(task.reward).toFixed(3)} | From: ${escapeHTML(task.from)}</small><br>
+        <small style="color:green">TXN: ${escapeHTML(task.txn)}</small><br>
+        <button class="btn-dark" onclick="confirmTask(${index})">✅ Confirm Task</button>
+        <button class="btn-red" onclick="rejectTask(${index})">Reject</button>
+      </div>`;
+  });
+
+  document.getElementById("pending-list").innerHTML = html;
+}
+
+function renderWithdrawRequests() {
+  let html = "";
+
+  if (withdrawRequests.length === 0) {
+    html = "<p style='color:#999'>No withdraw requests</p>";
+  }
+
+  withdrawRequests.forEach(function (request, index) {
+    html += `
+      <div style="background:#E8F5E9;padding:10px;border-radius:10px;margin-top:8px;text-align:left">
+        <b>User: ${escapeHTML(request.userId)}</b><br>
+        <small>Balance: $${escapeHTML(request.balance)} | Amount: $${escapeHTML(request.amount)}</small><br>
+        <small>Method: ${escapeHTML(request.method)}</small><br>
+        <small style="word-break:break-all">To: ${escapeHTML(request.address)}</small><br>
+        <button class="btn-green" onclick="acceptWithdraw(${index})">✅ ACCEPT & SHARE TO CHANNEL</button>
+        <button class="btn-red" onclick="rejectWithdraw(${index})">Reject</button>
+      </div>`;
+  });
+
+  document.getElementById("withdraw-pending-list").innerHTML = html;
+}
+
+function doTask(index) {
+  if (doneIds.includes(index)) return;
+
+  const task = tasks[index];
+  if (!task || !/^https?:\/\//i.test(task.link)) {
+    alert("Invalid task link");
+    return;
+  }
+
+  window.open(task.link, "_blank");
+  alert("Task opened. Note: membership has not been verified.");
+}
+
+function completeTask(index) {
+  // Demo-only function. This does not verify task completion.
+  if (!doneIds.includes(index) && tasks[index]) {
+    doneIds.push(index);
+    balance += Number(tasks[index].reward) || 0;
+    updateBalance();
+    localStorage.setItem("done_v2", JSON.stringify(doneIds));
+    renderTasks();
+  }
+}
+
+function showPaymentBox() {
+  const title = document.getElementById("add-title").value.trim();
+  const link = document.getElementById("add-link").value.trim();
+
+  if (!title || !/^https?:\/\//i.test(link)) {
+    alert("Enter a title and a valid https:// or http:// link");
+    return;
+  }
+
+  document.getElementById("payment-box").style.display = "block";
+}
+
+function copyText(id) {
+  const text = document.getElementById(id).innerText;
+
+  if (navigator.clipboard && navigator.clipboard.writeText) {
+    navigator.clipboard.writeText(text)
+      .then(() => alert("Copied!"))
+      .catch(() => prompt("Copy this text:", text));
+  } else {
+    prompt("Copy this text:", text);
+  }
+}
+
+function requestAddTask() {
+  const title = document.getElementById("add-title").value.trim();
+  const link = document.getElementById("add-link").value.trim();
+  const reward = document.getElementById("add-reward").value.trim() || "0.02";
+  const txn = document.getElementById("txn-id").value.trim();
+
+  if (!title || !/^https?:\/\//i.test(link) || !txn) {
+    alert("Enter a title, valid link and transaction hash.");
+    return;
+  }
+
+  const amount = Number(reward);
+
+  if (!Number.isFinite(amount) || amount <= 0) {
+    alert("Enter a valid reward amount.");
+    return;
+  }
+
+  const task = {
+    title:title,
+    link:link,
+    reward:amount,
+    from:userId,
+    txn:txn
+  };
+
+  pending.push(task);
+  localStorage.setItem("pending_v2", JSON.stringify(pending));
+
+  sendToAdmin(
+    `PAID TASK REQUEST\nTitle: ${title}\nLink: ${link}\nFrom: ${userId}\nTXN: ${txn}`
+  );
+
+  alert("Request saved in this browser. Server-side submission is not configured.");
+
+  document.getElementById("add-title").value = "";
+  document.getElementById("add-link").value = "";
+  document.getElementById("add-reward").value = "";
+  document.getElementById("txn-id").value = "";
+  document.getElementById("payment-box").style.display = "none";
+
+  renderPending();
+}
+
+function adminDirectAdd() {
+  if (userId !== ADMIN_ID) {
+    alert("Admin only!");
+    return;
+  }
+
+  const title = document.getElementById("admin-title").value.trim();
+  const link = document.getElementById("admin-link").value.trim();
+  const reward = Number(document.getElementById("admin-reward").value || "0.02");
+
+  if (!title || !/^https?:\/\//i.test(link) || !Number.isFinite(reward) || reward <= 0) {
+    alert("Enter a title, valid link and positive reward.");
+    return;
+  }
+
+  tasks.push({title:title,link:link,reward:reward});
+  localStorage.setItem("tasks_v2", JSON.stringify(tasks));
+
+  alert("Task added in this browser only.");
+  document.getElementById("admin-title").value = "";
+  document.getElementById("admin-link").value = "";
+  document.getElementById("admin-reward").value = "";
+
+  renderTasks();
+}
+
+function confirmTask(index) {
+  if (userId !== ADMIN_ID) return;
+
+  const task = pending[index];
+  if (!task) return;
+
+  tasks.push({
+    title:task.title,
+    link:task.link,
+    reward:Number(task.reward),
+    from:task.from
+  });
+
+  localStorage.setItem("tasks_v2", JSON.stringify(tasks));
+  pending.splice(index, 1);
+  localStorage.setItem("pending_v2", JSON.stringify(pending));
+
+  renderTasks();
+  renderPending();
+  alert("Task approved in this browser only.");
+}
+
+function rejectTask(index) {
+  if (userId !== ADMIN_ID) return;
+
+  pending.splice(index, 1);
+  localStorage.setItem("pending_v2", JSON.stringify(pending));
+  renderPending();
+}
+
+function deleteTask(index) {
+  if (userId !== ADMIN_ID) return;
+  if (!confirm("Delete this task?")) return;
+
+  tasks.splice(index, 1);
+  doneIds = [];
+  localStorage.setItem("tasks_v2", JSON.stringify(tasks));
+  localStorage.setItem("done_v2", JSON.stringify(doneIds));
+  renderTasks();
+}
+
+function copyRef() {
+  copyText("ref-link");
+}
+
+function watchAd() {
+  if (adsToday >= MAX_ADS_PER_DAY) {
+    alert("Daily limit " + MAX_ADS_PER_DAY + " reached!");
+    return;
+  }
+
+  if (typeof window.show_12095096 !== "function") {
+    document.getElementById("ad-status").innerText =
+      "❌ Ad SDK is not ready. Please try again later.";
+    return;
+  }
+
+  const button = document.querySelector("#page-ads .btn-orange");
+  button.disabled = true;
+  document.getElementById("ad-status").innerText = "Loading Ad...";
+
+  let result;
+
+  try {
+    result = window.show_12095096();
+  } catch (error) {
+    button.disabled = false;
+    document.getElementById("ad-status").innerText =
+      "❌ Could not open the ad. Please try again.";
+    console.error(error);
+    return;
+  }
+
+  Promise.resolve(result)
+    .then(function () {
+      /*
+        IMPORTANT:
+        This is a demo reward flow only.
+        SDK promise resolution alone may not prove a valid completed view.
+        Do not use this for real payouts without Monetag's documented
+        completion callback and server-side reward verification.
+      */
+      document.getElementById("ad-status").innerText =
+        "Ad flow finished. Reward verification is not configured.";
+    })
+    .catch(function (error) {
+      console.error("Monetag ad error:", error);
+      document.getElementById("ad-status").innerText =
+        "❌ No ad available right now. Please try again later.";
+    })
+    .finally(function () {
+      button.disabled = false;
+    });
+}
+
+function saveAddress() {
+  const address = document.getElementById("withdraw-address").value.trim();
+  const method = document.getElementById("withdraw-method").value;
+
+  if (!address) {
+    alert("Enter Address / UID");
+    return;
+  }
+
+  localStorage.setItem("withdraw_addr", address);
+  localStorage.setItem("withdraw_method", method);
+
+  document.getElementById("saved-addr").innerText =
+    "Saved: " + method + " - " + address;
+
+  alert("Address saved in this browser.");
+}
+
+function withdraw() {
+  const address =
+    document.getElementById("withdraw-address").value.trim() ||
+    localStorage.getItem("withdraw_addr") || "";
+
+  const method =
+    document.getElementById("withdraw-method").value ||
+    localStorage.getItem("withdraw_method") || "USDT BEP20";
+
+  if (!address) {
+    alert("Save Address/UID first!");
+    return;
+  }
+
+  if (balance < 5) {
+    alert("Minimum $5.00 needed. Your balance: $" + balance.toFixed(3));
+    return;
+  }
+
+  const request = {
+    userId:userId,
+    balance:balance.toFixed(3),
+    amount:balance.toFixed(3),
+    method:method,
+    address:address,
+    time:new Date().toLocaleString()
+  };
+
+  withdrawRequests.push(request);
+  localStorage.setItem("withdraw_req", JSON.stringify(withdrawRequests));
+
+  sendToAdmin(
+    `WITHDRAW REQUEST\nUser: ${userId}\nBalance: $${balance.toFixed(3)}\nMethod: ${method}\nTo: ${address}`
+  );
+
+  alert("Request saved in this browser. Server-side withdrawal processing is not configured.");
+
+  renderWithdrawRequests();
+}
+
+function acceptWithdraw(index) {
+  if (userId !== ADMIN_ID) {
+    alert("Admin only!");
+    return;
+  }
+
+  const request = withdrawRequests[index];
+  if (!request) return;
+
+  if (!confirm("Mark this request as accepted? Verify and send the payment manually.")) {
+    return;
+  }
+
+  sendToAdmin(
+    `WITHDRAW REQUEST MARKED ACCEPTED\nUser: ${request.userId}\nAmount: $${request.amount}\nMethod: ${request.method}`
+  );
+
+  withdrawRequests.splice(index, 1);
+  localStorage.setItem("withdraw_req", JSON.stringify(withdrawRequests));
+  renderWithdrawRequests();
+
+  alert("Marked accepted locally. No payment has been sent automatically.");
+}
+
+function rejectWithdraw(index) {
+  if (userId !== ADMIN_ID) return;
+  if (!confirm("Reject this request?")) return;
+
+  withdrawRequests.splice(index, 1);
+  localStorage.setItem("withdraw_req", JSON.stringify(withdrawRequests));
+  renderWithdrawRequests();
+}
 </script>
+
 </body>
 </html>
