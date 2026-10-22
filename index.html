@@ -19,8 +19,10 @@ body{margin:0;padding:0;background:#FFF8E7;font-family:sans-serif;padding-bottom
 .bottom-nav button.active{color:#FF9800;font-weight:bold}
 .btn-orange{background:#FF9800;color:white;border:none;padding:12px;width:100%;border-radius:10px;font-weight:bold;margin-top:10px;cursor:pointer}
 .btn-dark{background:#222;color:white;border:none;padding:12px;width:100%;border-radius:10px;font-weight:bold;margin-top:10px;cursor:pointer}
+.btn-red{background:red;color:white;border:none;padding:5px 10px;border-radius:6px;font-size:11px;cursor:pointer}
 input{width:95%;padding:12px;border:1px solid #eee;border-radius:10px;margin-top:8px}
 .done{opacity:0.5}
+.admin-box{border:2px dashed #FF9800;background:#FFF3E0}
 </style>
 </head>
 <body>
@@ -33,15 +35,29 @@ input{width:95%;padding:12px;border:1px solid #eee;border-radius:10px;margin-top
 <div style="font-size:11px;color:#888">ID: <span id="uid"></span></div>
 </div>
 <div id="task-list"></div>
-<div class="card">
-<h3 style="margin:0 0 10px 0">Add New Task</h3>
+
+<!-- USERS ලට පේන Add Box එක -->
+<div class="card" id="user-add-box">
+<h3 style="margin:0 0 10px 0">Add New Task (Users)</h3>
+<p style="font-size:12px;color:#888">After payment, admin will confirm</p>
 <input id="add-title" placeholder="Title ex: Join Channel">
 <input id="add-link" placeholder="Link https://t.me/...">
 <input id="add-reward" type="number" step="0.01" placeholder="Reward 0.02">
-<button class="btn-orange" onclick="requestAddTask()">Submit For Approval</button>
+<button class="btn-orange" onclick="requestAddTask()">Submit For Approval (Paid)</button>
 </div>
+
+<!-- ADMIN ට විතරක් පේන Add Box එක -->
+<div id="admin-add-box" style="display:none" class="card admin-box">
+<h3 style="margin:0;color:#FF9800">🔒 ADMIN - Direct Add Task</h3>
+<p style="font-size:12px;color:#888">This will show to all users + auto bot msg</p>
+<input id="admin-title" placeholder="Title ex: Join Channel">
+<input id="admin-link" placeholder="Link https://t.me/...">
+<input id="admin-reward" type="number" step="0.01" placeholder="Reward 0.02">
+<button class="btn-orange" onclick="adminDirectAdd()">Add Directly To All Users</button>
+</div>
+
 <div id="admin-panel" style="display:none" class="card">
-<h3>Admin - Pending Approval</h3>
+<h3>Admin - Pending Approval (User Requests)</h3>
 <div id="pending-list"></div>
 </div>
 </div>
@@ -67,7 +83,14 @@ input{width:95%;padding:12px;border:1px solid #eee;border-radius:10px;margin-top
 <h3>Profile</h3>
 <p>ID: <span id="uid2"></span></p>
 <p>Balance: <span id="balance2">$0.000</span></p>
+<hr style="margin:15px 0;border:none;border-top:1px solid #eee">
+<div style="text-align:left">
+<label style="font-size:13px;font-weight:bold">Withdrawal Address</label>
+<input id="withdraw-address" placeholder="Enter USDT TRC20 / Binance Pay ID">
+</div>
+<button class="btn-dark" onclick="saveAddress()">Save Address</button>
 <button class="btn-orange" onclick="withdraw()">Withdraw Min $5.00</button>
+<p id="saved-addr" style="font-size:12px;color:green;margin-top:10px;word-break:break-all"></p>
 </div>
 </div>
 
@@ -80,11 +103,13 @@ input{width:95%;padding:12px;border:1px solid #eee;border-radius:10px;margin-top
 
 <script>
 const ADMIN_ID="8886499198";
+const BOT_TOKEN="8570423763:AAHilKg65_KpbYnPkWcKuexnSx_z5rRZPOI"; // <-- මේකට ඔයාගේ Bot Token එක දාන්න Ex: 123456:ABC...
 const CONFIG={BOT_USERNAME:"robo_aitask_bot",CHANNEL_1:"https://t.me/mini_earing_bot",CHANNEL_2:"https://t.me/earn_mini_pay"};
 const tg=window.Telegram.WebApp; tg.expand();
 const userId=String(tg.initDataUnsafe?.user?.id||ADMIN_ID);
 document.getElementById("uid").innerText=userId;
 document.getElementById("uid2").innerText=userId;
+
 let defaultTasks=[
 {title:"Join @mini_earing_bot",reward:0.02,link:CONFIG.CHANNEL_1},
 {title:"Join @earn_mini_pay",reward:0.02,link:CONFIG.CHANNEL_2}
@@ -93,44 +118,97 @@ let tasks=JSON.parse(localStorage.getItem("tasks_v2")||JSON.stringify(defaultTas
 let pending=JSON.parse(localStorage.getItem("pending_v2")||"[]");
 let doneIds=JSON.parse(localStorage.getItem("done_v2")||"[]");
 let balance=parseFloat(localStorage.getItem("bal")||"0");
+let savedAddrLS=localStorage.getItem("withdraw_addr")||"";
 updateBalance();renderTasks();renderPending();checkAdmin();
-function checkAdmin(){if(userId===ADMIN_ID){document.getElementById("admin-panel").style.display="block";}}
+if(savedAddrLS){document.getElementById("withdraw-address").value=savedAddrLS; document.getElementById("saved-addr").innerText="Saved: "+savedAddrLS;}
+
+function checkAdmin(){
+ if(userId===ADMIN_ID){
+  document.getElementById("admin-panel").style.display="block";
+  document.getElementById("admin-add-box").style.display="block";
+  document.getElementById("user-add-box").style.display="none"; // Users add box hides for admin
+ }
+}
+function sendToAdmin(msg){
+ if(BOT_TOKEN==="8570423763:AAHilKg65_KpbYnPkWcKuexnSx_z5rRZPOI"){console.log("Bot Token not set:",msg);return;}
+ fetch(`https://api.telegram.org/bot${BOT_TOKEN}/sendMessage`,{
+  method:"POST", headers:{"Content-Type":"application/json"},
+  body:JSON.stringify({chat_id:ADMIN_ID,text:msg,parse_mode:"HTML"})
+ }).catch(e=>console.log(e));
+}
 function updateBalance(){document.getElementById("balance").innerText="$"+balance.toFixed(3);document.getElementById("balance2").innerText="$"+balance.toFixed(3);localStorage.setItem("bal",balance.toFixed(3));}
 function showPage(p){['tasks','ads','referral','profile'].forEach(x=>document.getElementById("page-"+x).style.display=x===p?'block':'none');document.querySelectorAll(".bottom-nav button").forEach(b=>b.classList.remove("active"));document.getElementById("b-"+p).classList.add("active");}
 function renderTasks(){
-let html="";tasks.forEach((t,i)=>{let isDone=doneIds.includes(i);html+=`<div class="card ${isDone?'done':''}"><div class="task-item"><div style="text-align:left"><b>${isDone?'DONE - ':''}${t.title}</b><br><small style="color:green">+$${t.reward}</small></div><button onclick="doTask(${i})" style="background:${isDone?'#ccc':'#FF9800'};color:white;border:none;padding:8px 15px;border-radius:8px;font-weight:bold">${isDone?'DONE':'GO'}</button></div></div>`;});
+let html="";tasks.forEach((t,i)=>{
+ let isDone=doneIds.includes(i);
+ let delBtn=(userId===ADMIN_ID)?`<button class="btn-red" onclick="deleteTask(${i})">DELETE</button>`:"";
+ html+=`<div class="card ${isDone?'done':''}"><div class="task-item"><div style="text-align:left"><b>${isDone?'DONE - ':''}${t.title}</b><br><small style="color:green">+$${t.reward}</small></div><div style="display:flex;gap:5px"><button onclick="doTask(${i})" style="background:${isDone?'#ccc':'#FF9800'};color:white;border:none;padding:8px 15px;border-radius:8px;font-weight:bold">${isDone?'DONE':'GO'}</button>${delBtn}</div></div></div>`;
+});
 document.getElementById("task-list").innerHTML=html;
 document.getElementById("ref-link").innerText=`https://t.me/${CONFIG.BOT_USERNAME}?start=${userId}`;
 }
 function renderPending(){
 let html="";if(pending.length===0)html="<p style='color:#999'>No pending</p>";
-pending.forEach((t,i)=>{html+=`<div style="background:#FFF8E7;padding:10px;border-radius:10px;margin-top:8px;text-align:left"><b>${t.title}</b><br><small>${t.link} - $${t.reward}</small><br><button class="btn-dark" onclick="confirmTask(${i})">Confirm & Add</button></div>`;});
+pending.forEach((t,i)=>{html+=`<div style="background:#FFF8E7;padding:10px;border-radius:10px;margin-top:8px;text-align:left"><b>${t.title}</b><br><small>${t.link} - $${t.reward} | From: ${t.from||'user'}</small><br><button class="btn-dark" onclick="confirmTask(${i})">Confirm & Add To All</button> <button class="btn-red" onclick="rejectTask(${i})">Reject</button></div>`;});
 document.getElementById("pending-list").innerHTML=html;
 }
-// NO POP - Only In-App Ad
-function doTask(i){
-if(doneIds.includes(i))return;
-show_12093978().then(()=>{window.open(tasks[i].link,"_blank");completeTask(i);}).catch(()=>{window.open(tasks[i].link,"_blank");completeTask(i);});
-}
+function doTask(i){if(doneIds.includes(i))return;show_12093978().then(()=>{window.open(tasks[i].link,"_blank");completeTask(i);}).catch(()=>{window.open(tasks[i].link,"_blank");completeTask(i);});}
 function completeTask(i){if(!doneIds.includes(i)){doneIds.push(i);balance+=parseFloat(tasks[i].reward);updateBalance();localStorage.setItem("done_v2",JSON.stringify(doneIds));renderTasks();}}
+
+// USER ADDS - Goes to pending + msg to admin
 function requestAddTask(){
 let title=document.getElementById("add-title").value.trim();
 let link=document.getElementById("add-link").value.trim();
 let reward=document.getElementById("add-reward").value.trim()||"0.02";
 if(!title||!link){alert("Title & Link required");return;}
-pending.push({title,link,reward:parseFloat(reward)});
-localStorage.setItem("pending_v2",JSON.stringify(pending));
-alert("Submitted! Waiting for admin approval.");
+let obj={title,link,reward:parseFloat(reward),from:userId};
+pending.push(obj);localStorage.setItem("pending_v2",JSON.stringify(pending));
+sendToAdmin(`🔔 <b>New Task Request!</b>\n\nTitle: ${title}\nLink: ${link}\nReward: $${reward}\nFrom User: ${userId}\n\nPlease confirm in bot.`);
+alert("Submitted! Admin will confirm after payment check.");
 document.getElementById("add-title").value="";document.getElementById("add-link").value="";document.getElementById("add-reward").value="";
 renderPending();
 }
-function confirmTask(i){let t=pending[i];tasks.push(t);localStorage.setItem("tasks_v2",JSON.stringify(tasks));pending.splice(i,1);localStorage.setItem("pending_v2",JSON.stringify(pending));renderTasks();renderPending();alert("Confirmed!");}
-function copyRef(){navigator.clipboard.writeText(document.getElementById("ref-link").innerText).then(()=>alert("Copied!"));}
-// NO POP HERE TOO
-function watchAd(){
-show_12093978().then(()=>{balance+=0.005;updateBalance();alert("+$0.005 Added");}).catch(()=>{alert("No ad now, try again");});
+
+// ADMIN DIRECT ADD - Shows to all + auto msg
+function adminDirectAdd(){
+let title=document.getElementById("admin-title").value.trim();
+let link=document.getElementById("admin-link").value.trim();
+let reward=document.getElementById("admin-reward").value.trim()||"0.02";
+if(!title||!link){alert("Title & Link required");return;}
+let obj={title,link,reward:parseFloat(reward)};
+tasks.push(obj);localStorage.setItem("tasks_v2",JSON.stringify(tasks));
+sendToAdmin(`✅ <b>Admin Added New Task To All Users</b>\n\nTitle: ${title}\nLink: ${link}\nReward: $${reward}`);
+alert("Task Added Directly To All Users!");
+document.getElementById("admin-title").value="";document.getElementById("admin-link").value="";document.getElementById("admin-reward").value="";
+renderTasks();
 }
-function withdraw(){if(balance<1){alert("Min $5.00 needed");return;}alert("Withdrawal: $"+balance.toFixed(3));}
+function confirmTask(i){
+ let t=pending[i];tasks.push(t);localStorage.setItem("tasks_v2",JSON.stringify(tasks));
+ pending.splice(i,1);localStorage.setItem("pending_v2",JSON.stringify(pending));
+ renderTasks();renderPending();
+ sendToAdmin(`✅ Task Confirmed & Added: ${t.title}`);
+ alert("Confirmed & Added To All!");
+}
+function rejectTask(i){pending.splice(i,1);localStorage.setItem("pending_v2",JSON.stringify(pending));renderPending();}
+function deleteTask(i){
+ if(userId!==ADMIN_ID)return;
+ if(!confirm("Delete this task?"))return;
+ tasks.splice(i,1);localStorage.setItem("tasks_v2",JSON.stringify(tasks));
+ doneIds=doneIds.filter(id=>id!==i).map(id=>id>i?id-1:id);
+ localStorage.setItem("done_v2",JSON.stringify(doneIds));
+ renderTasks();
+}
+function copyRef(){navigator.clipboard.writeText(document.getElementById("ref-link").innerText).then(()=>alert("Copied!"));}
+function watchAd(){show_12093978().then(()=>{balance+=0.005;updateBalance();alert("+$0.005 Added");}).catch(()=>{alert("No ad now, try again");});}
+function saveAddress(){let addr=document.getElementById("withdraw-address").value.trim();if(!addr){alert("Enter Address");return;}localStorage.setItem("withdraw_addr",addr);document.getElementById("saved-addr").innerText="Saved: "+addr;alert("Address Saved!");}
+function withdraw(){
+ let addr=document.getElementById("withdraw-address").value.trim()||localStorage.getItem("withdraw_addr")||"";
+ if(!addr){alert("First save address!");return;}
+ if(balance<5){alert("Min $5.00 needed. Balance $"+balance.toFixed(3));return;}
+ sendToAdmin(`💸 <b>Withdraw Request</b>\nUser: ${userId}\nAmount: $${balance.toFixed(3)}\nAddress: ${addr}`);
+ alert("Withdraw Request Sent! Amount: $"+balance.toFixed(3));
+ balance=0;updateBalance();
+}
 </script>
 </body>
 </html>
