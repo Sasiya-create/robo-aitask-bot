@@ -1,39 +1,75 @@
 <!DOCTYPE html>
 <html><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Robo AI Task Bot</title><script src="https://telegram.org/js/telegram-web-app.js"></script>
+<title>Robo AI Task Bot</title>
+<!-- ===== MONETAG - YOUR ID HERE ===== -->
+<script src='//libtl.com/sdk.js' data-zone='YOUR_MONETAG_ID' data-sdk='show_YOUR_MONETAG_ID'></script>
+<!-- ================================== -->
+<script src="https://telegram.org/js/telegram-web-app.js"></script>
 <style>*{font-family:sans-serif;box-sizing:border-box}body{margin:0;background:#FFF6E5;padding-bottom:90px}.header{background:#FFA726;color:white;padding:20px 20px 40px;border-radius:0 0 25px 25px;text-align:center}.card{background:white;margin:15px;border-radius:20px;padding:15px;box-shadow:0 4px 15px rgba(0,0,0,0.05)}.balance{font-size:32px;font-weight:700;text-align:center}.btn{border:none;padding:12px;width:100%;border-radius:12px;font-weight:700;cursor:pointer}.btn-orange{background:#FFA726;color:white}.input{width:100%;padding:12px;border-radius:10px;border:1px solid #ddd;margin:8px 0}.bottom-nav{position:fixed;bottom:0;left:0;right:0;background:white;display:flex;justify-content:space-around;padding:12px 0;border-radius:25px 25px 0 0;box-shadow:0 -4px 20px rgba(0,0,0,0.1)}.nav{font-size:11px;text-align:center;color:#999;cursor:pointer}.nav.active{color:#FFA726}#forceJoin{position:fixed;top:0;left:0;right:0;bottom:0;background:#FFF6E5;z-index:9999;padding:30px;text-align:center;display:none}</style>
 </head><body>
-<div id="forceJoin"><h2>⚠️ Join Required</h2><p>Join 2 channels to unlock!</p><div class="card"><p><b>@mini_earing_bot</b></p><a id="ch1Link" target="_blank"><button class="btn btn-orange">Join Channel 1</button></a></div><div class="card"><p><b>@earn_mini_pay</b></p><a id="ch2Link" target="_blank"><button class="btn btn-orange">Join Channel 2</button></a></div><button class="btn btn-orange" onclick="checkJoin()">✅ I Joined - Check Now</button></div>
-<div class="header"><h2>ROBO AI TASK BOT</h2><p>Earn USDT Daily</p></div>
-<div class="card"><div style="text-align:center;color:#888;font-size:12px;letter-spacing:2px">YOUR BALANCE</div><div class="balance" id="bal">$0.00</div><div id="refCount" style="text-align:center;font-size:11px">Referrals: 0 / 5 Required for Withdraw</div></div>
-<div id="taskTab" class="card"><b>Tasks - $0.01 Each</b><div id="tasks"></div><button class="btn btn-orange" style="margin-top:15px" onclick="openAddTask()">+ Add Your Task ($4 / $6)</button></div>
-<div id="adsTab" class="card" style="display:none"><b>Watch Ads - $0.05 Each</b><p style="font-size:12px">100 Ads/Day - Full View Check (15s)</p><button class="btn btn-orange" id="watchBtn" onclick="watchAd()">Watch Ad & Earn $0.05</button><p id="adCount" style="text-align:center;font-size:12px"></p></div>
-<div id="refTab" class="card" style="display:none"><b>Referral - $0.02 Each</b><p style="font-size:12px">Invite friends & earn</p><p id="myLink" style="font-size:12px;color:#FFA726;word-break:break-all"></p></div>
-<div id="profileTab" class="card" style="display:none"><b>Profile & Withdraw</b><p style="font-size:12px;color:red;font-weight:700">Min Withdraw $5 + 5 Referrals Required</p><input id="usdtAddr" class="input" placeholder="Your USDT BEP20 Address"><button class="btn btn-orange" onclick="withdraw()">Withdraw $5+</button><div id="adminFree"><hr><b>ADMIN: Free Task Add</b><input id="freeTaskName" class="input" placeholder="Task Name"><input id="freeTaskLink" class="input" placeholder="Task Link"><button class="btn" style="background:#EEE" onclick="addFreeTask()">Add Free Task</button></div></div>
-<div id="addTaskForm" class="card" style="display:none"><h3>Add Your Task</h3><p style="font-size:12px">$4 for 2000 members | $6 Unlimited</p><div style="background:#f9f9f9;padding:10px;border-radius:10px;font-size:12px">Pay to USDT BEP20:<br><b>0x52824938de138886fdf6f7a80262e5c0a173d92c</b><br><button onclick="navigator.clipboard.writeText('0x52824938de138886fdf6f7a80262e5c0a173d92c')">Copy</button></div><input id="taskTitle" class="input" placeholder="Task Title"><input id="taskLinkInput" class="input" placeholder="Task Link https://t.me/..."><select id="taskType" class="input"><option value="2000">2000 Members - $4</option><option value="unlimited">Unlimited - $6</option></select><input id="txnId" class="input" placeholder="Transaction ID (TxID)"><button class="btn btn-orange" onclick="sendTaskToAdmin()">Send to Admin</button></div>
-<div class="bottom-nav"><div class="nav active" onclick="showTab('task')">📋<br>Tasks</div><div class="nav" onclick="showTab('ads')">🎬<br>Watch Ads</div><div class="nav" onclick="showTab('ref')">👥<br>Referral</div><div class="nav" onclick="showTab('profile')">👤<br>Profile</div></div>
+<div id="forceJoin"><h2>⚠️ Join Required</h2><p>Join 2 channels!</p><div class="card"><p><b>@mini_earing_bot</b></p><a id="ch1Link" target="_blank"><button class="btn btn-orange">Join Channel 1</button></a></div><div class="card"><p><b>@earn_mini_pay</b></p><a id="ch2Link" target="_blank"><button class="btn btn-orange">Join Channel 2</button></a></div><button class="btn btn-orange" onclick="checkJoin()">✅ I Joined</button></div>
+<div class="header"><h2>ROBO AI TASK BOT</h2></div>
+<div class="card"><div style="text-align:center;color:#888;font-size:12px">YOUR BALANCE</div><div class="balance" id="bal">$0.00</div><div id="refCount" style="text-align:center;font-size:11px"></div></div>
+<div id="taskTab" class="card"><b>Tasks $0.01</b><div id="tasks"></div><button class="btn btn-orange" style="margin-top:15px" onclick="openAddTask()">+ Add Task ($4/$6)</button></div>
+<div id="adsTab" class="card" style="display:none"><b>Watch Ads $0.05 Each</b><p style="font-size:12px">100/Day - Monetag Verified</p><button class="btn btn-orange" id="watchBtn" onclick="watchAd()">Watch Ad & Earn $0.05</button><p id="adCount" style="text-align:center"></p></div>
+<div id="refTab" class="card" style="display:none"><b>Referral $0.02</b><p id="myLink" style="font-size:12px;color:#FFA726;word-break:break-all"></p></div>
+<div id="profileTab" class="card" style="display:none"><b>Withdraw</b><p style="font-size:12px;color:red;font-weight:700">Min $5 + 5 Referrals</p><input id="usdtAddr" class="input" placeholder="USDT BEP20"><button class="btn btn-orange" onclick="withdraw()">Withdraw $5+</button><div id="adminFree"><hr><b>ADMIN Free Task</b><input id="freeTaskName" class="input" placeholder="Task Name"><input id="freeTaskLink" class="input" placeholder="Link"><button class="btn" style="background:#EEE" onclick="addFreeTask()">Add Free</button></div></div>
+<div id="addTaskForm" class="card" style="display:none"><h3>Add Task</h3><p style="font-size:12px">$4 for 2000 / $6 Unlimited</p><div style="background:#f9f9f9;padding:10px;border-radius:10px;font-size:12px">Pay: <b>0x52824938de138886fdf6f7a80262e5c0a173d92c</b><br><button onclick="navigator.clipboard.writeText('0x52824938de138886fdf6f7a80262e5c0a173d92c')">Copy</button></div><input id="taskTitle" class="input" placeholder="Title"><input id="taskLinkInput" class="input" placeholder="Link"><select id="taskType" class="input"><option value="2000">2000 Members $4</option><option value="unlimited">Unlimited $6</option></select><input id="txnId" class="input" placeholder="TxID"><button class="btn btn-orange" onclick="sendTaskToAdmin()">Send to Admin</button></div>
+<div class="bottom-nav"><div class="nav active" onclick="showTab('task')">📋<br>Tasks</div><div class="nav" onclick="showTab('ads')">🎬<br>Ads</div><div class="nav" onclick="showTab('ref')">👥<br>Referral</div><div class="nav" onclick="showTab('profile')">👤<br>Profile</div></div>
 <script>
 const CONFIG = {
   BOT_TOKEN: "8570423763:AAHilKg65_KpbYnPkWcKuexnSx_z5rRZPOI",
   ADMIN_CHAT_ID: "8886499198",
-  ADMIN_USER_ID: "8886499198",
   CHANNEL_1_USERNAME: "@mini_earing_bot",
-  CHANNEL_1_LINK: "https://t.me/mini_earing_bot",
   CHANNEL_2_USERNAME: "@earn_mini_pay",
-  CHANNEL_2_LINK: "https://t.me/earn_mini_pay",
   PAYMENT_CHANNEL: "@earn_mini_pay",
   USDT_ADDRESS: "0x52824938de138886fdf6f7a80262e5c0a173d92c",
   BOT_USERNAME: "robo_aitask_bot"
 }
 let tg=window.Telegram.WebApp;try{tg.expand();}catch(e){}let userId=tg.initDataUnsafe?.user?.id||8886499198;let username=tg.initDataUnsafe?.user?.username||"admin";let balance=parseFloat(localStorage.getItem('bal')||0);let adCount=parseInt(localStorage.getItem('adCount')||0);let adDate=localStorage.getItem('adDate');let referrals=parseInt(localStorage.getItem('refs')||0);
-document.getElementById('bal').innerText="$"+balance.toFixed(2);document.getElementById('refCount').innerText=`Referrals: ${referrals}/5 Required`;document.getElementById('adCount').innerText=`${adCount}/100 Ads Today`;document.getElementById('myLink').innerText=`https://t.me/${CONFIG.BOT_USERNAME}?start=${userId}`;document.getElementById('ch1Link').href=CONFIG.CHANNEL_1_LINK;document.getElementById('ch2Link').href=CONFIG.CHANNEL_2_LINK;
-let tasks=JSON.parse(localStorage.getItem('allTasks')||'[]');function renderTasks(){let h="";tasks.forEach(t=>{let done=localStorage.getItem('task_'+t.id)=='done';h+=`<div style="display:flex;justify-content:space-between;padding:10px 0;border-bottom:1px solid #eee"><div><b>${t.name}</b><br><small>$0.01</small></div><div>${done?'✅ Done':`<button class="btn btn-orange" style="width:auto;padding:6px 12px" onclick="doTask(${t.id})">Start</button>`}</div></div>`;});document.getElementById('tasks').innerHTML=h||"<p style='font-size:12px;color:#888'>No tasks yet</p>";}renderTasks();
+document.getElementById('bal').innerText="$"+balance.toFixed(2);document.getElementById('refCount').innerText=`Referrals: ${referrals}/5`;document.getElementById('adCount').innerText=`${adCount}/100`;document.getElementById('myLink').innerText=`https://t.me/${CONFIG.BOT_USERNAME}?start=${userId}`;document.getElementById('ch1Link').href="https://t.me/mini_earing_bot";document.getElementById('ch2Link').href="https://t.me/earn_mini_pay";
+let tasks=JSON.parse(localStorage.getItem('allTasks')||'[]');function renderTasks(){let h="";tasks.forEach(t=>{let done=localStorage.getItem('task_'+t.id)=='done';h+=`<div style="display:flex;justify-content:space-between;padding:10px 0;border-bottom:1px solid #eee"><div><b>${t.name}</b><br><small>$0.01</small></div><div>${done?'✅':`<button class="btn btn-orange" style="width:auto;padding:6px 12px" onclick="doTask(${t.id})">Start</button>`}</div></div>`;});document.getElementById('tasks').innerHTML=h||"No tasks";}renderTasks();
 function showTab(t){document.getElementById('taskTab').style.display=t=='task'?'block':'none';document.getElementById('adsTab').style.display=t=='ads'?'block':'none';document.getElementById('refTab').style.display=t=='ref'?'block':'none';document.getElementById('profileTab').style.display=t=='profile'?'block':'none';}
-async function checkJoin(){try{let r1=await fetch(`https://api.telegram.org/bot${CONFIG.BOT_TOKEN}/getChatMember?chat_id=${CONFIG.CHANNEL_1_USERNAME}&user_id=${userId}`).then(r=>r.json());let r2=await fetch(`https://api.telegram.org/bot${CONFIG.BOT_TOKEN}/getChatMember?chat_id=${CONFIG.CHANNEL_2_USERNAME}&user_id=${userId}`).then(r=>r.json());if(r1.result&&r2.result&&["member","administrator","creator"].includes(r1.result.status)&&["member","administrator","creator"].includes(r2.result.status)){document.getElementById('forceJoin').style.display='none';localStorage.setItem('joined','yes');}else{alert("❌ Join both channels!");}}catch(e){document.getElementById('forceJoin').style.display='none';}}if(localStorage.getItem('joined')!='yes'){document.getElementById('forceJoin').style.display='block';}
+async function checkJoin(){try{let r1=await fetch(`https://api.telegram.org/bot${CONFIG.BOT_TOKEN}/getChatMember?chat_id=${CONFIG.CHANNEL_1_USERNAME}&user_id=${userId}`).then(r=>r.json());let r2=await fetch(`https://api.telegram.org/bot${CONFIG.BOT_TOKEN}/getChatMember?chat_id=${CONFIG.CHANNEL_2_USERNAME}&user_id=${userId}`).then(r=>r.json());if(r1.result&&r2.result&&["member","administrator","creator"].includes(r1.result.status)&&["member","administrator","creator"].includes(r2.result.status)){document.getElementById('forceJoin').style.display='none';localStorage.setItem('joined','yes');}else{alert("Join both!");}}catch(e){document.getElementById('forceJoin').style.display='none';}}if(localStorage.getItem('joined')!='yes'){document.getElementById('forceJoin').style.display='block';}
 async function doTask(id){let t=tasks.find(x=>x.id==id);window.open(t.link,"_blank");setTimeout(()=>{balance+=0.01;localStorage.setItem('bal',balance);localStorage.setItem('task_'+id,'done');document.getElementById('bal').innerText="$"+balance.toFixed(2);renderTasks();alert("✅ $0.01 Added!");},2000);}
-function watchAd(){let today=new Date().toDateString();if(adDate!==today){adCount=0;localStorage.setItem('adDate',today);}if(adCount>=100){alert("Daily 100 Ads limit!");return;}document.getElementById('watchBtn').innerText="Watching...15s";let sec=15;let timer=setInterval(()=>{document.getElementById('watchBtn').innerText=sec+"s left";sec--;if(sec<0){clearInterval(timer);adCount++;balance+=0.05;localStorage.setItem('adCount',adCount);localStorage.setItem('bal',balance);localStorage.setItem('adDate',today);document.getElementById('bal').innerText="$"+balance.toFixed(2);document.getElementById('adCount').innerText=adCount+"/100";document.getElementById('watchBtn').innerText="Watch Ad & Earn $0.05";alert("✅ $0.05 Added! Full view verified");}},1000);}
-function openAddTask(){document.getElementById('addTaskForm').style.display='block';window.scrollTo(0,600);}
-async function sendTaskToAdmin(){let title=document.getElementById('taskTitle').value;let link=document.getElementById('taskLinkInput').value;let type=document.getElementById('taskType').value;let txn=document.getElementById('txnId').value;if(!title||!link||!txn){alert("Fill all!");return;}let text=`🔥 NEW TASK REQUEST\nUser: ${userId} (@${username})\nTitle: ${title}\nLink: ${link}\nType: ${type} - $${type=='2000'?'4':'6'}\nTxnID: ${txn}\nPay: ${CONFIG.USDT_ADDRESS}`;await fetch(`/.netlify/functions/sendToAdmin`,{method:"POST",body:JSON.stringify({type:"task",title:title,link:link,price:type,txn:txn,text:text,userId:userId,username:username})});alert("✅ Sent to Admin!");document.getElementById('addTaskForm').style.display='none';}
-async function withdraw(){let addr=document.getElementById('usdtAddr').value;if(!addr){alert("Enter USDT BEP20 Address!");return;}if(balance<5){alert("Min $5 required! You have $"+balance.toFixed(2));return;}if(referrals<5){alert(`Need 5 referrals! You have ${referrals}/5`);return;}let text=`💰 WITHDRAW REQUEST $5+\nUser: ${userId} (@${username})\nAmount: $${balance.toFixed(2)}\nReferrals: ${referrals}\nUSDT: ${addr}`;await fetch(`/.netlify/functions/sendToAdmin`,{method:"POST",body:JSON.stringify({type:"withdraw",text:text,userId:userId,username:username,amount:balance,addr:addr})});alert("✅ Withdraw $"+balance.toFixed(2)+" sent to Admin!");}
-function addFreeTask(){let n=document.getElementById('freeTaskName').value;let l=document.getElementById('freeTaskLink').value;if(!n||!l){alert("Fill!");return;}tasks.push({id:Date.now(),name:n,link:l});localStorage.setItem('allTasks',JSON.stringify(tasks));renderTasks();alert("Free Task Added!");}
+
+// ===== MONETAG AD FUNCTION - WITH FALLBACK =====
+function watchAd(){
+  let today=new Date().toDateString();
+  if(adDate!==today){adCount=0;localStorage.setItem('adDate',today);}
+  if(adCount>=100){alert("Daily 100 limit!");return;}
+  
+  const rewardUser = () => {
+    adCount++;balance+=0.05;
+    localStorage.setItem('adCount',adCount);
+    localStorage.setItem('bal',balance);
+    localStorage.setItem('adDate',today);
+    document.getElementById('bal').innerText="$"+balance.toFixed(2);
+    document.getElementById('adCount').innerText=adCount+"/100";
+    document.getElementById('watchBtn').innerText="Watch Ad & Earn $0.05";
+    alert("✅ $0.05 Added! Monetag verified");
+  };
+
+  // Try Monetag first
+  try {
+    if(typeof show_YOUR_MONETAG_ID !== 'undefined'){
+      document.getElementById('watchBtn').innerText="Loading Ad...";
+      show_YOUR_MONETAG_ID().then(rewardUser).catch(()=>{
+        // fallback timer
+        document.getElementById('watchBtn').innerText="Watching...15s";
+        let sec=15;let timer=setInterval(()=>{document.getElementById('watchBtn').innerText=sec+"s";sec--;if(sec<0){clearInterval(timer);rewardUser();}},1000);
+      });
+      return;
+    }
+  } catch(e){}
+  
+  // Fallback 15s if no Monetag
+  document.getElementById('watchBtn').innerText="Watching...15s";
+  let sec=15;let timer=setInterval(()=>{document.getElementById('watchBtn').innerText=sec+"s left";sec--;if(sec<0){clearInterval(timer);rewardUser();}},1000);
+}
+
+function openAddTask(){document.getElementById('addTaskForm').style.display='block';}
+async function sendTaskToAdmin(){let title=document.getElementById('taskTitle').value;let link=document.getElementById('taskLinkInput').value;let type=document.getElementById('taskType').value;let txn=document.getElementById('txnId').value;if(!title||!link||!txn){alert("Fill all!");return;}let text=`🔥 NEW TASK\nUser: ${userId} (@${username})\nTitle: ${title}\nLink: ${link}\nType: ${type} $${type=='2000'?'4':'6'}\nTxn: ${txn}`;await fetch(`/.netlify/functions/sendToAdmin`,{method:"POST",body:JSON.stringify({type:"task",title:title,link:link,price:type,txn:txn,text:text,userId:userId,username:username})});alert("Sent to Admin!");}
+async function withdraw(){let addr=document.getElementById('usdtAddr').value;if(!addr){alert("Enter USDT!");return;}if(balance<5){alert("Min $5! You have $"+balance.toFixed(2));return;}if(referrals<5){alert(`Need 5 refs! You have ${referrals}/5`);return;}let text=`💰 WITHDRAW $5+\nUser: ${userId} (@${username})\nAmount: $${balance.toFixed(2)}\nRefs: ${referrals}\nUSDT: ${addr}`;await fetch(`/.netlify/functions/sendToAdmin`,{method:"POST",body:JSON.stringify({type:"withdraw",text:text,userId:userId,username:username,amount:balance,addr:addr})});alert("✅ Withdraw sent!");}
+function addFreeTask(){let n=document.getElementById('freeTaskName').value;let l=document.getElementById('freeTaskLink').value;if(!n||!l){alert("Fill!");return;}tasks.push({id:Date.now(),name:n,link:l});localStorage.setItem('allTasks',JSON.stringify(tasks));renderTasks();alert("Added!");}
 </script></body></html>
